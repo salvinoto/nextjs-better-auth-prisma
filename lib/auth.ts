@@ -8,8 +8,8 @@ const from = process.env.BETTER_AUTH_EMAIL || "delivered@resend.dev";
 const to = process.env.TEST_EMAIL || "";
 export const auth = betterAuth({
 	database: {
-		provider: "sqlite",
-		url: "./db.sqlite",
+		provider: "postgres",
+		url: process.env.DATABASE_URL || "",
 	},
 	emailAndPassword: {
 		enabled: true,
@@ -75,14 +75,14 @@ export const auth = betterAuth({
 		}),
 		passkey(),
 	],
-	socialProviders: {
-		github: {
-			clientId: process.env.GITHUB_CLIENT_ID || "",
-			clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
-		},
-		google: {
-			clientId: process.env.GOOGLE_CLIENT_ID || "",
-			clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-		},
-	},
+	// socialProviders: {
+	// 	github: {
+	// 		clientId: process.env.GITHUB_CLIENT_ID || "",
+	// 		clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
+	// 	},
+	// 	google: {
+	// 		clientId: process.env.GOOGLE_CLIENT_ID || "",
+	// 		clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+	// 	},
+	// },
 });
