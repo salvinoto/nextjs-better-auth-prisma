@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model account {
+  id           String    @id
+  accountId    String
+  providerId   String
+  userId       String
+  accessToken  String?
+  refreshToken String?
+  idToken      String?
+  expiresAt    DateTime? @db.Date
+  password     String?
+  user         user      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model invitation {
+  id             String   @id
+  organizationId String
+  email          String
+  role           String?
+  status         String
+  expiresAt      DateTime @db.Date
+  inviterId      String
+  user           user     @relation(fields: [inviterId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model member {
+  id             String   @id
+  organizationId String
+  userId         String
+  email          String
+  role           String
+  createdAt      DateTime @db.Date
+}
+
+model organization {
+  id        String   @id
+  name      String
+  slug      String   @unique
+  logo      String?
+  createdAt DateTime @db.Date
+  metadata  String?
+}
+
+model passkey {
+  id             String    @id
+  name           String?
+  publicKey      String
+  userId         String
+  webauthnUserID String
+  counter        Int
+  deviceType     String
+  backedUp       Boolean
+  transports     String?
+  createdAt      DateTime? @db.Date
+  user           user      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model session {
+  id                   String   @id
+  expiresAt            DateTime @db.Date
+  ipAddress            String?
+  userAgent            String?
+  userId               String
+  activeOrganizationId String?
+  user                 user     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model user {
+  id                   String       @id
+  name                 String
+  email                String
+  emailVerified        Boolean
+  image                String?
+  createdAt            DateTime     @db.Date
+  updatedAt            DateTime     @db.Date
+  twoFactorEnabled     Boolean?
+  twoFactorSecret      String?
+  twoFactorBackupCodes String?
+  account              account[]
+  invitation           invitation[]
+  passkey              passkey[]
+  session              session[]
+}
