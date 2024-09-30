@@ -33,12 +33,12 @@ const route = app.get(
         async (c) => {
             const { name } = c.req.valid("json");
             const session = await auth.api.getSession({
-                headers: headers(),
+                headers: c.req.raw.headers,
             }).catch((e) => {
                 throw error(401, "Unauthorized");
             });
 
-            // console.log("session", session);
+            console.log("session", c.req.raw.headers);
             if (session) {
                 return c.json({
                     message: `Hi ${name}. You are authorized to access this route. Your session is ${JSON.stringify(session)}.`,
