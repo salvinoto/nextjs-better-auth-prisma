@@ -38,7 +38,7 @@ const route = app.get(
                 throw error(401, "Unauthorized");
             });
 
-            console.log("session", c.req.raw.headers);
+            // console.log("session", c.req.raw.headers);
             if (session) {
                 return c.json({
                     message: `Hi ${name}. You are authorized to access this route. Your session is ${JSON.stringify(session)}.`,
