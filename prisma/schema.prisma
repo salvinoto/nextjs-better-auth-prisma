@@ -42,12 +42,14 @@ model member {
 }
 
 model organization {
-  id        String   @id
+  id        String     @id
   name      String
-  slug      String   @unique
+  slug      String     @unique
   logo      String?
-  createdAt DateTime @db.Date
+  createdAt DateTime   @db.Date
   metadata  String?
+  isActive  Boolean    @default(false)
+  customer  customer?  @relation("OrganizationCustomer")
 }
 
 model passkey {
@@ -85,8 +87,33 @@ model user {
   twoFactorEnabled     Boolean?
   twoFactorSecret      String?
   twoFactorBackupCodes String?
+  isActive             Boolean      @default(false)
   account              account[]
   invitation           invitation[]
   passkey              passkey[]
   session              session[]
+  customer             customer?    @relation("UserCustomer")
+}
+
+model customer {
+  id                String          @id @default(uuid())
+  stripeCustomerId  String          @unique
+  userId            String?         @unique
+  organizationId    String?         @unique
+  user              user?           @relation("UserCustomer", fields: [userId], references: [id])
+  organization      organization?   @relation("OrganizationCustomer", fields: [organizationId], references: [id])
+  subscriptions     subscription[]
+}
+
+model subscription {
+  id                    String     @id @default(uuid())
+  stripeSubscriptionId  String     @unique
+  customerId            String
+  status                String
+  plan                  String
+  currentPeriodStart    DateTime
+  currentPeriodEnd      DateTime
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  customer              customer   @relation(fields: [customerId], references: [id])
 }

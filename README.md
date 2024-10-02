@@ -1,10 +1,11 @@
 # Better Auth Next js example 
 
-This is an example of how to use Better Auth with Next. 
+This is an example of how to use Better Auth with NextJS, Prisma, Hono, and Stripe.
 
 **Implements the following features:**
 Email & Password . Social Sign-in . Passkeys . Email Verification . Password Reset . Two Factor Authentication . Profile Update . Session Management . Organization, Members and Roles
-
+Subscription Management with Stripe for Organizations and Users individually.
+Hono for API, with RPC for easy type safety on throughout application, with abiliy to call any API endpoint from any part of the application, or outside source.
 
 
 ## How to run
