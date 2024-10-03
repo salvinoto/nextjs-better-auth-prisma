@@ -48,6 +48,7 @@ const webhookHandler = async (req: NextRequest) => {
 
           // Get userId or organizationId from metadata
           const metadata = 'deleted' in stripeCustomer ? {} : stripeCustomer.metadata as { [key: string]: string };
+          console.log({ metadata });
           const userId = metadata.userId;
           const organizationId = metadata.organizationId;
 
