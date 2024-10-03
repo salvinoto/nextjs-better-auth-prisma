@@ -11,7 +11,7 @@ datasource db {
 model User {
   id                   String       @id
   name                 String
-  email                String
+  email                String       @unique
   emailVerified        Boolean
   image                String?
   createdAt            DateTime
@@ -23,8 +23,8 @@ model User {
   Account              Account[]
   Invitation           Invitation[]
   Passkey              Passkey[]
+  Customer             Customer[]
 
-  @@unique([email])
   @@map("user")
 }
 
@@ -67,14 +67,14 @@ model Verification {
 model Organization {
   id         String       @id
   name       String
-  slug       String?
+  slug       String?      @unique
   logo       String?
   createdAt  DateTime
   metadata   String?
   Member     Member[]
   Invitation Invitation[]
+  Customer   Customer[]
 
-  @@unique([slug])
   @@map("organization")
 }
 
@@ -118,4 +118,38 @@ model Passkey {
   createdAt      DateTime?
 
   @@map("passkey")
+}
+
+// New models added for Stripe integration.
+
+model Customer {
+  id               String         @id @default(uuid())
+  stripeCustomerId String         @unique
+  userId           String?
+  organizationId   String?
+  isActive         Boolean        @default(false)
+  Subscription     Subscription[]
+
+  // Relations
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("customer")
+}
+
+model Subscription {
+  id                   String   @id @default(uuid())
+  stripeSubscriptionId String   @unique
+  customerId           String
+  status               String
+  plan                 String
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  // Relation
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@map("subscription")
 }
