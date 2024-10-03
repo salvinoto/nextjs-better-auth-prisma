@@ -3,14 +3,18 @@ import { organization, passkey, twoFactor } from "better-auth/plugins";
 import { reactInvitationEmail } from "./email/invitation";
 import { reactResetPasswordEmail } from "./email/rest-password";
 import { resend } from "./email/resend";
+import { PrismaClient } from "@prisma/client";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+
+const db = new PrismaClient();
 
 const from = process.env.BETTER_AUTH_EMAIL || "delivered@resend.dev";
 const to = process.env.TEST_EMAIL || "";
+
 export const auth = betterAuth({
-	database: {
-		provider: "postgres",
-		url: process.env.DATABASE_URL || "",
-	},
+	database: prismaAdapter(db, {
+		provider: "postgresql",
+	}),
 	emailAndPassword: {
 		enabled: true,
 		async sendResetPassword(token, user) {
@@ -21,10 +25,10 @@ export const auth = betterAuth({
 				react: reactResetPasswordEmail({
 					username: user.email,
 					resetLink: `${process.env.NODE_ENV === "development"
-							? "http://localhost:3000"
-							: process.env.NEXT_PUBLIC_APP_URL ||
-							process.env.VERCEL_URL ||
-							process.env.BETTER_AUTH_URL
+						? "http://localhost:3000"
+						: process.env.NEXT_PUBLIC_APP_URL ||
+						process.env.VERCEL_URL ||
+						process.env.BETTER_AUTH_URL
 						}/reset-password/${token}`,
 				}),
 			});

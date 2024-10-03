@@ -8,112 +8,114 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model account {
-  id           String    @id
-  accountId    String
-  providerId   String
-  userId       String
-  accessToken  String?
-  refreshToken String?
-  idToken      String?
-  expiresAt    DateTime? @db.Date
-  password     String?
-  user         user      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model invitation {
-  id             String   @id
-  organizationId String
-  email          String
-  role           String?
-  status         String
-  expiresAt      DateTime @db.Date
-  inviterId      String
-  user           user     @relation(fields: [inviterId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model member {
-  id             String   @id
-  organizationId String
-  userId         String
-  email          String
-  role           String
-  createdAt      DateTime @db.Date
-}
-
-model organization {
-  id        String     @id
-  name      String
-  slug      String     @unique
-  logo      String?
-  createdAt DateTime   @db.Date
-  metadata  String?
-  isActive  Boolean    @default(false)
-  customer  customer?  @relation("OrganizationCustomer")
-}
-
-model passkey {
-  id             String    @id
-  name           String?
-  publicKey      String
-  userId         String
-  webauthnUserID String
-  counter        Int
-  deviceType     String
-  backedUp       Boolean
-  transports     String?
-  createdAt      DateTime? @db.Date
-  user           user      @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model session {
-  id                   String   @id
-  expiresAt            DateTime @db.Date
-  ipAddress            String?
-  userAgent            String?
-  userId               String
-  activeOrganizationId String?
-  user                 user     @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model user {
+model User {
   id                   String       @id
   name                 String
   email                String
   emailVerified        Boolean
   image                String?
-  createdAt            DateTime     @db.Date
-  updatedAt            DateTime     @db.Date
+  createdAt            DateTime
+  updatedAt            DateTime
   twoFactorEnabled     Boolean?
   twoFactorSecret      String?
   twoFactorBackupCodes String?
-  isActive             Boolean      @default(false)
-  account              account[]
-  invitation           invitation[]
-  passkey              passkey[]
-  session              session[]
-  customer             customer?    @relation("UserCustomer")
+  Session              Session[]
+  Account              Account[]
+  Invitation           Invitation[]
+  Passkey              Passkey[]
+
+  @@unique([email])
+  @@map("user")
 }
 
-model customer {
-  id                String          @id @default(uuid())
-  stripeCustomerId  String          @unique
-  userId            String?         @unique
-  organizationId    String?         @unique
-  user              user?           @relation("UserCustomer", fields: [userId], references: [id])
-  organization      organization?   @relation("OrganizationCustomer", fields: [organizationId], references: [id])
-  subscriptions     subscription[]
+model Session {
+  id                   String   @id
+  expiresAt            DateTime
+  ipAddress            String?
+  userAgent            String?
+  userId               String
+  users                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeOrganizationId String?
+
+  @@map("session")
 }
 
-model subscription {
-  id                    String     @id @default(uuid())
-  stripeSubscriptionId  String     @unique
-  customerId            String
-  status                String
-  plan                  String
-  currentPeriodStart    DateTime
-  currentPeriodEnd      DateTime
-  createdAt             DateTime   @default(now())
-  updatedAt             DateTime   @updatedAt
-  customer              customer   @relation(fields: [customerId], references: [id])
+model Account {
+  id           String    @id
+  accountId    String
+  providerId   String
+  userId       String
+  users        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken  String?
+  refreshToken String?
+  idToken      String?
+  expiresAt    DateTime?
+  password     String?
+
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+
+  @@map("verification")
+}
+
+model Organization {
+  id         String       @id
+  name       String
+  slug       String?
+  logo       String?
+  createdAt  DateTime
+  metadata   String?
+  Member     Member[]
+  Invitation Invitation[]
+
+  @@unique([slug])
+  @@map("organization")
+}
+
+model Member {
+  id             String       @id
+  organizationId String
+  organizations  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String
+  email          String
+  role           String
+  createdAt      DateTime
+
+  @@map("member")
+}
+
+model Invitation {
+  id             String       @id
+  organizationId String
+  organizations  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  email          String
+  role           String?
+  status         String
+  expiresAt      DateTime
+  inviterId      String
+  users          User         @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@map("invitation")
+}
+
+model Passkey {
+  id             String    @id
+  name           String?
+  publicKey      String
+  userId         String
+  users          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  webauthnUserID String
+  counter        Int
+  deviceType     String
+  backedUp       Boolean
+  transports     String?
+  createdAt      DateTime?
+
+  @@map("passkey")
 }
