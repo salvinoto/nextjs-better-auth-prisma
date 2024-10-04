@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import UserCard from "./user-card";
 import { OrganizationCard } from "./organization-card";
 import { hono } from "@/lib/hono";
+import { BillingCard } from "./billing-card";
 
 export default async function DashboardPage() {
 	const [session, activeSessions] = await Promise.all([
@@ -29,6 +30,7 @@ export default async function DashboardPage() {
 					activeSessions={JSON.parse(JSON.stringify(activeSessions))}
 				/>
 				<OrganizationCard session={JSON.parse(JSON.stringify(session))} />
+				<BillingCard session={JSON.parse(JSON.stringify(session))} />
 				<div>
 					<h1>{data.message}</h1>
 					<h1>{data2.message}</h1>
