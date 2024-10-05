@@ -17,7 +17,7 @@ import {
 } from "@/lib/auth-client";
 import { ActiveOrganization, Session } from "@/lib/auth-types";
 import getStripe from "@/lib/stripe/getStripe";
-import { getActiveSubscription, ActiveSubscriptionResult } from "@/lib/stripe/stripe";
+import { getActiveSubscription, ActiveSubscriptionResult, createCheckoutSession } from "@/lib/stripe/stripe";
 import { ChevronDownIcon, PlusIcon } from "@radix-ui/react-icons";
 import { Loader2, MailPlus } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -69,25 +69,20 @@ export function BillingCard(props: { session: Session | null }) {
     const handleCreateCheckoutSession = async (priceId: string) => {
         const customerId = activeOrg?.data?.id || session?.user.id;
 
-        const res = await fetch(`/api/stripe/checkout-session`, {
-            method: "POST",
-            body: JSON.stringify({ priceId, customerId }),
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
+        try {
+            const { session: checkoutSession } = await createCheckoutSession(customerId ?? "", priceId);
 
-        const checkoutSession = await res.json().then((value) => {
-            return value.session;
-        });
+            const stripe = await getStripe();
+            const { error } = await stripe!.redirectToCheckout({
+                sessionId: checkoutSession.id,
+            });
 
-        const stripe = await getStripe();
-        const { error } = await stripe!.redirectToCheckout({
-            sessionId: checkoutSession.id,
-        });
-
-        if (error) {
-            console.warn(error.message);
+            if (error) {
+                console.warn(error.message);
+            }
+        } catch (error) {
+            console.error("Error creating checkout session:", error);
+            // You might want to show an error message to the user here
         }
     };
 
