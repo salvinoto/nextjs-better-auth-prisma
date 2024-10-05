@@ -125,10 +125,6 @@ export type ActiveSubscriptionResult = {
 } | null;
 
 export async function createCheckoutSession(customerId: string, priceId: string) {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2024-09-30.acacia",
-  });
-
   const session = await auth.api.getSession(
     {
       headers: headers(),
@@ -139,9 +135,21 @@ export async function createCheckoutSession(customerId: string, priceId: string)
     throw new Error("You are not signed in.");
   }
 
+  // Find the customer (either personal or organization)
+  const customer = await prisma.customer.findFirst({
+    where: {
+      OR: [
+        { userId: customerId },
+        { organizationId: customerId }
+      ]
+    }
+  });
+  console.log('Customer:', customer);
+  if (!customer) throw new Error('Customer not found');
+
   const checkoutSession = await stripe.checkout.sessions.create({
     mode: "subscription",
-    customer: customerId,
+    customer: customer.stripeCustomerId,
     line_items: [
       {
         price: priceId,
@@ -162,4 +170,35 @@ export async function createCheckoutSession(customerId: string, priceId: string)
   }
 
   return { session: checkoutSession };
+}
+
+export async function createPortalSession(customerId: string) {
+  const session = await auth.api.getSession(
+    {
+      headers: headers(),
+    }
+  );
+
+  if (!session?.user) {
+    throw new Error("You are not signed in.");
+  }
+
+  // Find the customer (either personal or organization)
+  const customer = await prisma.customer.findFirst({
+    where: {
+      OR: [
+        { userId: customerId },
+        { organizationId: customerId }
+      ]
+    }
+  });
+  console.log('Customer:', customer);
+  if (!customer) throw new Error('Customer not found');
+
+  const portalSession = await stripe.billingPortal.sessions.create({
+    customer: customer.stripeCustomerId,
+    return_url: `http://localhost:3000/dashboard`,
+  });
+
+  return { session: portalSession };
 }

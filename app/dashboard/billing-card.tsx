@@ -17,12 +17,14 @@ import {
 } from "@/lib/auth-client";
 import { ActiveOrganization, Session } from "@/lib/auth-types";
 import getStripe from "@/lib/stripe/getStripe";
-import { getActiveSubscription, ActiveSubscriptionResult, createCheckoutSession } from "@/lib/stripe/stripe";
+import { getActiveSubscription, ActiveSubscriptionResult, createCheckoutSession, createPortalSession } from "@/lib/stripe/stripe";
 import { ChevronDownIcon, PlusIcon } from "@radix-ui/react-icons";
 import { Loader2, MailPlus } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
 export function BillingCard(props: { session: Session | null }) {
+    const router = useRouter();
     const organizations = useListOrganizations();
     const activeOrg = useActiveOrganization();
     const [optimisticOrg, setOptimisticOrg] = useState<ActiveOrganization | null>(
@@ -86,13 +88,26 @@ export function BillingCard(props: { session: Session | null }) {
         }
     };
 
+    // Create portal session
+    const handleCreatePortalSession = async () => {
+        const customerId = activeOrg?.data?.id || session?.user.id;
+
+        try {
+            const { session: portalSession } = await createPortalSession(customerId ?? "");
+            router.push(portalSession.url);
+        } catch (error) {
+            console.error("Error creating portal session:", error);
+            // You might want to show an error message to the user here
+        }
+    };
+
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Billing</CardTitle>
                 <div className="flex justify-between">
                     <div>
-                        <Button>
+                        <Button onClick={handleCreatePortalSession}>
                             <PlusIcon />
                             Manage Subscription
                         </Button>
