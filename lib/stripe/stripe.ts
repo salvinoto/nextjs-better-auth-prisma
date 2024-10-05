@@ -108,5 +108,16 @@ export async function getActiveSubscription(id: string) {
     return null;
   }
 
-  return subscriptions;
+  // Get the plan
+  const plan = await stripe.plans.retrieve(subscriptions.id);
+
+  return {
+    plan: plan,
+    subscription: subscriptions
+  };
 }
+
+export type ActiveSubscriptionResult = {
+  plan: Stripe.Plan;
+  subscription: Stripe.Subscription;
+} | null;
