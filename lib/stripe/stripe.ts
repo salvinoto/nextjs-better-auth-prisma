@@ -33,7 +33,15 @@ export async function createStripeCustomerForUser(userId: string) {
   return stripeCustomer.id;
 }
 
-export async function createStripeCustomerForOrganization(organizationId: string) {
+export async function createStripeCustomerForOrganization() {
+
+  const session = await auth.api.getSession({
+    headers: headers(),
+  });
+  if (!session?.user) throw new Error('User not found');
+
+  const organizationId = session.session.activeOrganizationId;
+
   const organization = await prisma.organization.findUnique({ where: { id: organizationId } });
   if (!organization) throw new Error('Organization not found');
 
@@ -54,34 +62,6 @@ export async function createStripeCustomerForOrganization(organizationId: string
 
   return stripeCustomer.id;
 }
-
-// export async function getActiveSubscription(id: string) {
-//   // Find the customer (either personal or organization)
-//   const customer = await prisma.customer.findFirst({
-//     where: {
-//       OR: [
-//         { userId: id },
-//         { organizationId: id }
-//       ]
-//     }
-//   });
-//   if (!customer) throw new Error('Customer not found');
-
-//   // Retrieve the subscription using the stripeCustomerId
-//   const subscriptions = await stripe.subscriptions.list({
-//     customer: customer.stripeCustomerId,
-//     status: 'active',
-//     limit: 1
-//   });
-
-//   if (subscriptions.data.length === 0) {
-//     console.log('No active subscription found');
-//     // throw new Error('No active subscription found');
-//     return null;
-//   }
-
-//   return subscriptions.data[0];
-// }
 
 export async function getActiveSubscription(id: string) {
   // Find the customer (either personal or organization)

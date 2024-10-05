@@ -40,6 +40,7 @@ import {
 	useListOrganizations,
 	useSession,
 } from "@/lib/auth-client";
+import { createStripeCustomerForOrganization } from "@/lib/stripe/stripe";
 import { ActiveOrganization, Session } from "@/lib/auth-types";
 import { ChevronDownIcon, PlusIcon } from "@radix-ui/react-icons";
 import { Loader2, MailPlus } from "lucide-react";
@@ -424,9 +425,15 @@ function CreateOrganizationDialog() {
 									onResponse: () => {
 										setLoading(false);
 									},
-									onSuccess: () => {
-										toast.success("Organization created successfully");
-										setOpen(false);
+									onSuccess: async () => {
+										try {
+											await createStripeCustomerForOrganization();
+											toast.success("Organization created successfully");
+											setOpen(false);
+										} catch (error) {
+											console.error("Error creating Stripe customer:", error);
+											toast.error("Organization created, but there was an issue setting up billing. Please contact support.");
+										}
 									},
 									onError: (error) => {
 										toast.error(error.error.message);
