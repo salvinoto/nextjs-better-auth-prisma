@@ -49,10 +49,11 @@ import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
 import CopyButton from "@/components/ui/copy-button";
 import Image from "next/image";
-
+import { useRouter } from "next/navigation";
 export function OrganizationCard(props: { session: Session | null }) {
 	const organizations = useListOrganizations();
 	const activeOrg = useActiveOrganization();
+	const router = useRouter();
 	const [optimisticOrg, setOptimisticOrg] = useState<ActiveOrganization | null>(
 		null,
 	);
@@ -325,6 +326,7 @@ export function OrganizationCard(props: { session: Session | null }) {
 }
 
 function CreateOrganizationDialog() {
+	const router = useRouter();
 	const [name, setName] = useState("");
 	const [slug, setSlug] = useState("");
 	const [loading, setLoading] = useState(false);
@@ -425,14 +427,20 @@ function CreateOrganizationDialog() {
 									onResponse: () => {
 										setLoading(false);
 									},
-									onSuccess: async () => {
+									onSuccess: async (ctx) => {
 										try {
-											await createStripeCustomerForOrganization();
+											await createStripeCustomerForOrganization(ctx.data.id);
 											toast.success("Organization created successfully");
 											setOpen(false);
+											organization.setActive(ctx.data.id);
 										} catch (error) {
 											console.error("Error creating Stripe customer:", error);
-											toast.error("Organization created, but there was an issue setting up billing. Please contact support.");
+											toast.error("Organization created, but there was an issue setting up billing. Please contact support.", {
+												action: {
+													label: "Support",
+													onClick: () => router.push("/support"),
+												},
+											});
 										}
 									},
 									onError: (error) => {

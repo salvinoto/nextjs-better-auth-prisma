@@ -22,6 +22,7 @@ import { ChevronDownIcon, PlusIcon } from "@radix-ui/react-icons";
 import { Loader2, MailPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 export function BillingCard(props: { session: Session | null }) {
     const router = useRouter();
@@ -93,11 +94,17 @@ export function BillingCard(props: { session: Session | null }) {
         const customerId = activeOrg?.data?.id || session?.user.id;
 
         try {
-            const { session: portalSession } = await createPortalSession(customerId ?? "");
-            router.push(portalSession.url);
+            const { session: portalSessionURL } = await createPortalSession(customerId ?? "");
+            router.push(portalSessionURL);
         } catch (error) {
             console.error("Error creating portal session:", error);
             // You might want to show an error message to the user here
+            toast.error("Error creating portal session. Please contact support.", {
+                action: {
+                    label: "Support",
+                    onClick: () => router.push("/support"),
+                },
+            });
         }
     };
 

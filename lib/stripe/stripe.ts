@@ -33,14 +33,12 @@ export async function createStripeCustomerForUser(userId: string) {
   return stripeCustomer.id;
 }
 
-export async function createStripeCustomerForOrganization() {
+export async function createStripeCustomerForOrganization(organizationId: string) {
 
   const session = await auth.api.getSession({
     headers: headers(),
   });
   if (!session?.user) throw new Error('User not found');
-
-  const organizationId = session.session.activeOrganizationId;
 
   const organization = await prisma.organization.findUnique({ where: { id: organizationId } });
   if (!organization) throw new Error('Organization not found');
@@ -180,5 +178,5 @@ export async function createPortalSession(customerId: string) {
     return_url: `http://localhost:3000/dashboard`,
   });
 
-  return { session: portalSession };
+  return { session: portalSession.url };
 }
