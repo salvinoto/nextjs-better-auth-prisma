@@ -20,8 +20,8 @@ Hono for API, with RPC for easy type safety on throughout application, with abil
 
  
 
- - [ ] Ability to create Stripe customer as an organization.
- - [ ] Ability to charge per user for organizations.
+ - [x] Ability to create Stripe customer as an organization.
+ - [x] Ability to charge per user for organizations.
  - [ ] Add the ability to create more roles than owner, admin, and member for organizations.
  - [ ] Create documentation showing how to use different database adapters.
 
