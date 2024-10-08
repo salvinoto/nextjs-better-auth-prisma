@@ -135,8 +135,8 @@ export async function createCheckoutSession(customerId: string, priceId: string)
         quantity: 1,
       },
     ],
-    success_url: process.env.NEXT_PUBLIC_WEBSITE_URL + `?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: process.env.NEXT_PUBLIC_WEBSITE_URL,
+    success_url: process.env.NEXT_PUBLIC_WEBSITE_URL + `/dashboard`,
+    cancel_url: process.env.NEXT_PUBLIC_WEBSITE_URL + '/dashboard',
     subscription_data: {
       metadata: {
         payingUserId: session.user.id,
@@ -185,7 +185,22 @@ export async function createPortalSession(customerId: string) {
 export async function getPricing() {
   const products = await stripe.products.list({
     active: true,
+    expand: ['data.default_price'],
     limit: 100,
   });
-  return products.data;
+
+  const productsWithPrices = await Promise.all(products.data.map(async (product) => {
+    const prices = await stripe.prices.list({
+      product: product.id,
+      active: true,
+      limit: 100,
+    });
+
+    return {
+      ...product,
+      prices: prices.data,
+    };
+  }));
+
+  return productsWithPrices;
 }
