@@ -48,20 +48,24 @@ export function BillingCard(props: { session: Session | null }) {
 
     useEffect(() => {
         async function fetchSubscription() {
-            if (activeOrg?.data?.id ?? session?.user.id) {
+            const customerId = activeOrg?.data?.id || session?.user.id;
+            console.log('Customer ID:', customerId);
+            if (customerId) {
                 setLoading(true);
                 try {
-                    const sub = await getActiveSubscription(activeOrg?.data?.id ?? session?.user.id ?? "");
+                    const sub = await getActiveSubscription(customerId);
                     if (sub) {
                         setSubscription({
                             plan: sub.plan,
                             subscription: sub.subscription
                         });
                         console.log('Subscription:', sub);
+                    } else {
+                        setSubscription(null);
                     }
                 } catch (error) {
                     console.error("Error fetching subscription:", error);
-                    // toast.error("Failed to fetch subscription information");
+                    toast.error("Failed to fetch subscription information");
                 } finally {
                     setLoading(false);
                 }
@@ -69,7 +73,7 @@ export function BillingCard(props: { session: Session | null }) {
         }
 
         fetchSubscription();
-    }, []);
+    }, [activeOrg?.data?.id, session?.user.id]);
 
     // Create checkout session
     const handleCreateCheckoutSession = async (priceId: string) => {

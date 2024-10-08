@@ -64,6 +64,7 @@ export async function createStripeCustomerForOrganization(organizationId: string
 
 export async function getActiveSubscription(id: string) {
   // Find the customer (either personal or organization)
+  // console.log('ID:', id);
   const customer = await prisma.customer.findFirst({
     where: {
       OR: [
@@ -76,25 +77,28 @@ export async function getActiveSubscription(id: string) {
   if (!customer) throw new Error('Customer not found');
 
   // Retrieve the subscription using the stripeCustomerId
-  const subscriptions = await prisma.subscription.findFirst({
+  const subscription = await prisma.subscription.findFirst({
     where: {
-      customerId: customer.stripeCustomerId,
-      status: 'active',
+      customerId: customer.id,
+      AND: {
+        status: 'active',
+      },
     }
   });
+  // console.log('Subscription:', subscription);
 
-  if (!subscriptions) {
+  if (!subscription) {
     console.log('No active subscription found');
     // throw new Error('No active subscription found');
     return null;
   }
 
   // Get the plan
-  const plan = await stripe.plans.retrieve(subscriptions.id);
+  const plan = await stripe.plans.retrieve(subscription.plan);
 
   return {
     plan: plan,
-    subscription: subscriptions
+    subscription: subscription
   };
 }
 
