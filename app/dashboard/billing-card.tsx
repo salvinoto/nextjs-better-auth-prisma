@@ -52,8 +52,11 @@ export function BillingCard(props: { session: Session | null }) {
                 setLoading(true);
                 try {
                     const sub = await getActiveSubscription(activeOrg?.data?.id ?? session?.user.id ?? "");
-                    if (!sub) {
-                        setSubscription(sub);
+                    if (sub) {
+                        setSubscription({
+                            plan: sub.plan,
+                            subscription: sub.subscription
+                        });
                         console.log('Subscription:', sub);
                     }
                 } catch (error) {
@@ -131,7 +134,7 @@ export function BillingCard(props: { session: Session | null }) {
                         <p className="font-semibold">Subscription Status</p>
                         <p className="mb-4 capitalize">{subscription.subscription.status}</p>
                         <p className="font-semibold">Next Billing Date</p>
-                        <p>{new Date(subscription.subscription.current_period_end * 1000).toLocaleDateString()}</p>
+                        <p>{new Date(Number(subscription.subscription.currentPeriodEnd) * 1000).toLocaleDateString()}</p>
                     </div>
                 ) : (
                     <p>No active subscription found.</p>

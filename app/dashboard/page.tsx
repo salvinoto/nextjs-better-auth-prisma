@@ -5,6 +5,7 @@ import UserCard from "./user-card";
 import { OrganizationCard } from "./organization-card";
 import { hono } from "@/lib/hono";
 import { BillingCard } from "./billing-card";
+import { PricingTable } from "@/components/pricing-table";
 
 export default async function DashboardPage() {
 	const [session, activeSessions] = await Promise.all([
@@ -31,6 +32,7 @@ export default async function DashboardPage() {
 				/>
 				<OrganizationCard session={JSON.parse(JSON.stringify(session))} />
 				<BillingCard session={JSON.parse(JSON.stringify(session))} />
+				<PricingTable />
 				<div>
 					<h1>{data.message}</h1>
 					<h1>{data2.message}</h1>

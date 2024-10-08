@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import prisma from "@/prisma/prisma";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
+import type { Subscription } from '@prisma/client'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-09-30.acacia",
@@ -99,7 +100,7 @@ export async function getActiveSubscription(id: string) {
 
 export type ActiveSubscriptionResult = {
   plan: Stripe.Plan;
-  subscription: Stripe.Subscription;
+  subscription: Subscription;
 } | null;
 
 export async function createCheckoutSession(customerId: string, priceId: string) {
@@ -179,4 +180,12 @@ export async function createPortalSession(customerId: string) {
   });
 
   return { session: portalSession.url };
+}
+
+export async function getPricing() {
+  const products = await stripe.products.list({
+    active: true,
+    limit: 100,
+  });
+  return products.data;
 }
