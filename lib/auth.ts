@@ -5,8 +5,12 @@ import { reactResetPasswordEmail } from "./email/rest-password";
 import { resend } from "./email/resend";
 import { PrismaClient } from "@prisma/client";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { createStripeCustomerForUser } from "./stripe/stripe";
+import Stripe from "stripe";
+
 const db = new PrismaClient();
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+	apiVersion: "2024-09-30.acacia",
+});
 
 const from = process.env.BETTER_AUTH_EMAIL || "delivered@resend.dev";
 const to = process.env.TEST_EMAIL || "";
@@ -92,8 +96,20 @@ export const auth = betterAuth({
 			create: {
 				after: async (user) => {
 					//perform additional actions, like creating a stripe customer
-					const stripeCustomerId = await createStripeCustomerForUser(user.id);
-					console.log({ stripeCustomerId });
+					const stripeCustomer = await stripe.customers.create({
+						email: user.email,
+						name: user.name,
+						metadata: {
+							userId: user.id,
+						},
+					});
+
+					await db.customer.create({
+						data: {
+							stripeCustomerId: stripeCustomer.id,
+							userId: user.id,
+						},
+					});
 				},
 			},
 		},

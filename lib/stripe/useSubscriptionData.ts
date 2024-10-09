@@ -1,5 +1,6 @@
 import { useActiveOrganization, useSession } from "@/lib/auth-client";
-import { getActiveSubscription, ActiveSubscriptionResult } from "@/lib/stripe/stripe";
+import { ActiveSubscriptionResult } from "@/lib/stripe/stripe";
+import { hono } from "@/lib/hono/client";
 import { useState, useEffect } from "react";
 
 export function useSubscriptionData() {
@@ -14,12 +15,24 @@ export function useSubscriptionData() {
       if (customerId) {
         setLoading(true);
         try {
-          const sub = await getActiveSubscription(customerId);
+          const response = await hono.api.stripe["active-subscription"][":id"].$get({
+            param: { id: customerId ?? "" }
+          });
+          const sub = await response.json();
           if (sub) {
             setSubscription({
               plan: sub.plan,
-              subscription: sub.subscription
+              subscription: {
+                ...sub.subscription,
+                createdAt: new Date(sub.subscription.createdAt),
+                updatedAt: new Date(sub.subscription.updatedAt),
+                currentPeriodStart: new Date(sub.subscription.currentPeriodStart),
+                currentPeriodEnd: new Date(sub.subscription.currentPeriodEnd)
+              }
             });
+            console.log('Subscription:', sub);
+          } else {
+            setSubscription(null);
           }
         } catch (error) {
           console.error("Error fetching subscription:", error);

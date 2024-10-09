@@ -40,7 +40,6 @@ import {
 	useListOrganizations,
 	useSession,
 } from "@/lib/auth-client";
-import { createStripeCustomerForOrganization } from "@/lib/stripe/stripe";
 import { ActiveOrganization, Session } from "@/lib/auth-types";
 import { ChevronDownIcon, PlusIcon } from "@radix-ui/react-icons";
 import { Loader2, MailPlus } from "lucide-react";
@@ -50,6 +49,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import CopyButton from "@/components/ui/copy-button";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { hono } from "@/lib/hono/client";
+
 export function OrganizationCard(props: { session: Session | null }) {
 	const organizations = useListOrganizations();
 	const activeOrg = useActiveOrganization();
@@ -429,7 +430,9 @@ function CreateOrganizationDialog() {
 									},
 									onSuccess: async (ctx) => {
 										try {
-											await createStripeCustomerForOrganization(ctx.data.id);
+											await hono.api.stripe["create-customer-organization"].$post({
+												json: { organizationId: ctx.data.id }
+											});
 											toast.success("Organization created successfully");
 											setOpen(false);
 											organization.setActive(ctx.data.id);

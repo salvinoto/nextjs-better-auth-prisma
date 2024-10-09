@@ -4,9 +4,8 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Check } from "lucide-react";
-import { getPricing } from "@/lib/stripe/stripe";
+import { hono } from "@/lib/hono/client"
 import { useSubscriptionData } from "@/lib/stripe/useSubscriptionData";
-import { createCheckoutSession } from "@/lib/stripe/stripe";
 import getStripe from "@/lib/stripe/getStripe";
 import Stripe from "stripe";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -23,7 +22,8 @@ export const PricingTable = () => {
 
     useEffect(() => {
         async function fetchData() {
-            const pricing = await getPricing();
+            const response = await hono.api.stripe.pricing.$get();
+            const pricing = await response.json();
             setPricing(pricing as ProductWithPrices[]);
         }
         fetchData();
@@ -33,11 +33,14 @@ export const PricingTable = () => {
         const customerId = activeOrg?.id || user?.id;
 
         try {
-            const { session: checkoutSession } = await createCheckoutSession(customerId ?? "", priceId);
+            const response = await hono.api.stripe["create-checkout-session"].$post({
+                json: { customerId: customerId ?? "", priceId }
+            });
+            const checkoutSession = await response.json();
 
             const stripe = await getStripe();
             const { error } = await stripe!.redirectToCheckout({
-                sessionId: checkoutSession.id,
+                sessionId: checkoutSession.session.id,
             });
 
             if (error) {
@@ -45,6 +48,7 @@ export const PricingTable = () => {
             }
         } catch (error) {
             console.error("Error creating checkout session:", error);
+            // You might want to show an error message to the user here
         }
     };
 

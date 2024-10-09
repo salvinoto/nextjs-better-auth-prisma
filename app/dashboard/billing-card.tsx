@@ -1,6 +1,6 @@
 "use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { hono } from "@/lib/hono/client";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -17,7 +17,7 @@ import {
 } from "@/lib/auth-client";
 import { ActiveOrganization, Session } from "@/lib/auth-types";
 import getStripe from "@/lib/stripe/getStripe";
-import { getActiveSubscription, ActiveSubscriptionResult, createCheckoutSession, createPortalSession } from "@/lib/stripe/stripe";
+import { ActiveSubscriptionResult } from "@/lib/stripe/stripe";
 import { ChevronDownIcon, PlusIcon } from "@radix-ui/react-icons";
 import { Loader2, MailPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -53,11 +53,20 @@ export function BillingCard(props: { session: Session | null }) {
             if (customerId) {
                 setLoading(true);
                 try {
-                    const sub = await getActiveSubscription(customerId);
+                    const response = await hono.api.stripe["active-subscription"][":id"].$get({
+                        param: { id: customerId ?? "" }
+                    });
+                    const sub = await response.json();
                     if (sub) {
                         setSubscription({
                             plan: sub.plan,
-                            subscription: sub.subscription
+                            subscription: {
+                                ...sub.subscription,
+                                createdAt: new Date(sub.subscription.createdAt),
+                                updatedAt: new Date(sub.subscription.updatedAt),
+                                currentPeriodStart: new Date(sub.subscription.currentPeriodStart),
+                                currentPeriodEnd: new Date(sub.subscription.currentPeriodEnd)
+                            }
                         });
                         console.log('Subscription:', sub);
                     } else {
@@ -80,11 +89,14 @@ export function BillingCard(props: { session: Session | null }) {
         const customerId = activeOrg?.data?.id || session?.user.id;
 
         try {
-            const { session: checkoutSession } = await createCheckoutSession(customerId ?? "", priceId);
+            const response = await hono.api.stripe["create-checkout-session"].$post({
+                json: { customerId: customerId ?? "", priceId }
+            });
+            const checkoutSession = await response.json();
 
             const stripe = await getStripe();
             const { error } = await stripe!.redirectToCheckout({
-                sessionId: checkoutSession.id,
+                sessionId: checkoutSession.session.id,
             });
 
             if (error) {
@@ -101,8 +113,12 @@ export function BillingCard(props: { session: Session | null }) {
         const customerId = activeOrg?.data?.id || session?.user.id;
 
         try {
-            const { session: portalSessionURL } = await createPortalSession(customerId ?? "");
-            router.push(portalSessionURL);
+            const response = await hono.api.stripe["create-portal-session"].$post({
+                json: { customerId: customerId ?? "" }
+            });
+            const portalSessionURL = await response.json();
+
+            router.push(portalSessionURL.sessionURL);
         } catch (error) {
             console.error("Error creating portal session:", error);
             // You might want to show an error message to the user here
