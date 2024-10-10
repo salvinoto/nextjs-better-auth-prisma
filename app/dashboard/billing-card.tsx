@@ -1,6 +1,6 @@
 "use client";
 
-import { hono } from "@/lib/hono/client";
+import { client } from "@/lib/rpc";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -53,20 +53,15 @@ export function BillingCard(props: { session: Session | null }) {
             if (customerId) {
                 setLoading(true);
                 try {
-                    const response = await hono.api.stripe["active-subscription"][":id"].$get({
-                        param: { id: customerId ?? "" }
+                    const sub = await client("/active-subscription/:id", {
+                        method: "GET",
+                        params: { id: customerId ?? "" }
                     });
-                    const sub = await response.json();
-                    if (sub) {
+
+                    if (sub.data) {
                         setSubscription({
-                            plan: sub.plan,
-                            subscription: {
-                                ...sub.subscription,
-                                createdAt: new Date(sub.subscription.createdAt),
-                                updatedAt: new Date(sub.subscription.updatedAt),
-                                currentPeriodStart: new Date(sub.subscription.currentPeriodStart),
-                                currentPeriodEnd: new Date(sub.subscription.currentPeriodEnd)
-                            }
+                            plan: sub.data.plan,
+                            subscription: sub.data.subscription
                         });
                         console.log('Subscription:', sub);
                     } else {
@@ -87,24 +82,26 @@ export function BillingCard(props: { session: Session | null }) {
     // Create checkout session
     const handleCreateCheckoutSession = async (priceId: string) => {
         const customerId = activeOrg?.data?.id || session?.user.id;
-
         try {
-            const response = await hono.api.stripe["create-checkout-session"].$post({
-                json: { customerId: customerId ?? "", priceId }
-            });
-            const checkoutSession = await response.json();
-
-            const stripe = await getStripe();
-            const { error } = await stripe!.redirectToCheckout({
-                sessionId: checkoutSession.session.id,
+            const checkoutSession = await client("@post/create-checkout-session", {
+                method: "POST",
+                body: { customerId: customerId ?? "", priceId }
             });
 
-            if (error) {
-                console.warn(error.message);
+            if (checkoutSession.data) {
+                const stripe = await getStripe();
+                const { error } = await stripe!.redirectToCheckout({
+                    sessionId: checkoutSession.data.session.id,
+                });
             }
         } catch (error) {
             console.error("Error creating checkout session:", error);
-            // You might want to show an error message to the user here
+            toast.error("Error creating checkout session. Please contact support.", {
+                action: {
+                    label: "Support",
+                    onClick: () => router.push("/support"),
+                },
+            });
         }
     };
 
@@ -113,15 +110,16 @@ export function BillingCard(props: { session: Session | null }) {
         const customerId = activeOrg?.data?.id || session?.user.id;
 
         try {
-            const response = await hono.api.stripe["create-portal-session"].$post({
-                json: { customerId: customerId ?? "" }
+            const portalSessionURL = await client("@post/create-portal-session", {
+                method: "POST",
+                body: { customerId: customerId ?? "" }
             });
-            const portalSessionURL = await response.json();
 
-            router.push(portalSessionURL.sessionURL);
+            if (portalSessionURL.data) {
+                router.push(portalSessionURL.data.sessionURL);
+            }
         } catch (error) {
             console.error("Error creating portal session:", error);
-            // You might want to show an error message to the user here
             toast.error("Error creating portal session. Please contact support.", {
                 action: {
                     label: "Support",
@@ -154,7 +152,7 @@ export function BillingCard(props: { session: Session | null }) {
                         <p className="font-semibold">Subscription Status</p>
                         <p className="mb-4 capitalize">{subscription.subscription.status}</p>
                         <p className="font-semibold">Next Billing Date</p>
-                        <p>{new Date(Number(subscription.subscription.currentPeriodEnd) * 1000).toLocaleDateString()}</p>
+                        <p>{new Date((subscription.subscription.currentPeriodEnd)).toLocaleDateString()}</p>
                     </div>
                 ) : (
                     <p>No active subscription found.</p>

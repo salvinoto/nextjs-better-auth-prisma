@@ -1,11 +1,20 @@
-import { Hono } from "hono";
-import { stripeRoute } from "./stripe";
+// better-call (saul) server
 
-const app = new Hono().basePath("/api");
+import { createRouter } from "better-call"
+import { createCustomerUserRoute, createCustomerOrganizationRoute, getActiveSubscriptionRoute, createCheckoutSessionRoute, createPortalSessionRoute, getPricingRoute } from "@/lib/stripe/stripe"
 
-const route = app
-    .route("/stripe", stripeRoute);
+export const router = createRouter({
+    createCustomerUserRoute,
+    createCustomerOrganizationRoute,
+    getActiveSubscriptionRoute,
+    createCheckoutSessionRoute,
+    createPortalSessionRoute,
+    getPricingRoute,
+}, {
+    basePath: "/api"
+})
 
-export const GET = app.fetch;
-export const POST = app.fetch;
-export type AppType = typeof route;
+export const GET = router.handler
+export const POST = router.handler
+export const PUT = router.handler
+export const DELETE = router.handler

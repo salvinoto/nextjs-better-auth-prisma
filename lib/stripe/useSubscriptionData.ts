@@ -1,8 +1,8 @@
 import { useActiveOrganization, useSession } from "@/lib/auth-client";
 import { ActiveSubscriptionResult } from "@/lib/stripe/stripe";
-import { hono } from "@/lib/hono/client";
 import { useState, useEffect } from "react";
-
+import { toast } from "sonner";
+import { client } from "@/lib/rpc";
 export function useSubscriptionData() {
   const activeOrg = useActiveOrganization();
   const { data: sessionData } = useSession();
@@ -12,23 +12,19 @@ export function useSubscriptionData() {
   useEffect(() => {
     async function fetchSubscription() {
       const customerId = activeOrg?.data?.id ?? sessionData?.user.id;
+      console.log('Customer ID:', customerId);
       if (customerId) {
         setLoading(true);
         try {
-          const response = await hono.api.stripe["active-subscription"][":id"].$get({
-            param: { id: customerId ?? "" }
+          const sub = await client("/active-subscription/:id", {
+            method: "GET",
+            params: { id: customerId ?? "" }
           });
-          const sub = await response.json();
-          if (sub) {
+
+          if (sub.data) {
             setSubscription({
-              plan: sub.plan,
-              subscription: {
-                ...sub.subscription,
-                createdAt: new Date(sub.subscription.createdAt),
-                updatedAt: new Date(sub.subscription.updatedAt),
-                currentPeriodStart: new Date(sub.subscription.currentPeriodStart),
-                currentPeriodEnd: new Date(sub.subscription.currentPeriodEnd)
-              }
+              plan: sub.data.plan,
+              subscription: sub.data.subscription
             });
             console.log('Subscription:', sub);
           } else {
@@ -36,6 +32,7 @@ export function useSubscriptionData() {
           }
         } catch (error) {
           console.error("Error fetching subscription:", error);
+          toast.error("Failed to fetch subscription information");
         } finally {
           setLoading(false);
         }
