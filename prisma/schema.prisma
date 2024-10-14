@@ -24,6 +24,7 @@ model User {
   Invitation           Invitation[]
   Passkey              Passkey[]
   Customer             Customer[]
+  TwoFactor            TwoFactor[]
 
   @@map("user")
 }
@@ -152,4 +153,14 @@ model Subscription {
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@map("subscription")
+}
+
+model TwoFactor {
+  id          String @id
+  secret      String
+  backupCodes String
+  userId      String
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("twoFactor")
 }
