@@ -20,7 +20,7 @@ better-call for API, with RPC for easy type safety on throughout application, wi
 ## How to run
 
 1. Clone the code sandbox (or the repo) and open it in your code editor
-2. Move .env.example to .env and provide necessary variables
+2. Copy `.env.example` to `.env` and provide necessary variables (see `.env.example` for examples)
 3. Run the following commands
 
 ```bash
